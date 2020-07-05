@@ -188,26 +188,32 @@ let pushPackage (project: string) =
         | None, Some nugetKey -> nugetKey
         | _ -> failwith "The Nuget API key must be set in a NUGET_KEY environmental variable"
     let nupkg =
-        Directory.GetFiles(projectPath </> "bin" </> "Release")
+        System.IO.Directory.GetFiles(project </> "bin" </> "Release")
         |> Seq.head
-        |> Path.GetFullPath
+        |> System.IO.Path.GetFullPath
 
-    let pushCmd = sprintf "nuget push %s -s nuget.org -k %s" nupkg nugetKey
-    run dotnetCli pushCmd projectPath
+    let pushCmd = sprintf "nuget push %s -s nuget.org -k %s" nupkg apiKey
+    //TODO FIXME where's run? // run dotnetCli pushCmd projectPath
+    ()
+    
+let publish project = fun _ -> 
+    printf "run dotnet publish?"
 
-Target "PublishFeliz" (publish libPath)
-Target "PublishRecharts" (publish "./Feliz.Recharts")
-Target "PublishRoughViz" (publish "./Feliz.RoughViz")
-Target "PublishPigeonMaps" (publish "./Feliz.PigeonMaps")
-Target "PublishUseDeferred" (publish "./Feliz.UseDeferred")
-Target "PublishUseElmish" (publish "./Feliz.UseElmish")
-Target "PublishTemplate" (publish "./Feliz.Template")
-Target "PublishMarkdown" (publish "./Feliz.Markdown")
-Target "PublishPopover" (publish "./Feliz.Popover")
-Target "PublishUseMediaQuery" (publish "./Feliz.UseMediaQuery")
-Target "PublishElmishComponents" (publish "./Feliz.ElmishComponents")
+let libPath = "./Feliz"
 
-Target "PatchFeliz" <| fun _ ->
+Target.create "PublishFeliz" (publish libPath)
+Target.create "PublishRecharts" (publish "./Feliz.Recharts")
+Target.create "PublishRoughViz" (publish "./Feliz.RoughViz")
+Target.create "PublishPigeonMaps" (publish "./Feliz.PigeonMaps")
+Target.create "PublishUseDeferred" (publish "./Feliz.UseDeferred")
+Target.create "PublishUseElmish" (publish "./Feliz.UseElmish")
+Target.create "PublishTemplate" (publish "./Feliz.Template")
+Target.create "PublishMarkdown" (publish "./Feliz.Markdown")
+Target.create "PublishPopover" (publish "./Feliz.Popover")
+Target.create "PublishUseMediaQuery" (publish "./Feliz.UseMediaQuery")
+Target.create "PublishElmishComponents" (publish "./Feliz.ElmishComponents")
+
+Target.create "PatchFeliz" <| fun _ ->
     [ publish libPath
       publish "./Feliz.Recharts"
       publish "./Feliz.PigeonMaps"
@@ -218,18 +224,6 @@ Target "PatchFeliz" <| fun _ ->
       publish "./Feliz.UseDeferred"
       publish "./Feliz.Markdown" ]
    |> List.iter (fun target -> target())
-
-Target "Compile" <| fun _ ->
-    run npmTool "run build" "."
-
-Target "Build" DoNothing
-
-    let dir = __SOURCE_DIRECTORY__ @@ project @@ "bin"
-
-    Paket.push(fun p ->
-        { p with
-            ApiKey = apiKey
-            WorkingDir = dir })
 
 Target.create "PublishAll" <| fun _ ->
     templates
